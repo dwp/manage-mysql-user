@@ -4,52 +4,50 @@
 #
 version: 2
 jobs:
-  build:
+  build-test
     docker:
       - image: circleci/python:3.7
     working_directory: ~/repo
     steps:
       - checkout
       - run:
-          name: install dependencies
+          name: "Build and test"
           command: |
-            sudo pip --quiet install -r requirements.txt
-            pip install --quiet --user bump2version
             mkdir -p artifacts
+            sudo pip --quiet install -r requirements.txt -t artifacts
             cp manage-mysql-user.py artifacts/
-            cd artifacts
-            set +o pipefail
-            LATEST_VERSION=$(curl --silent "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/releases/latest" | jq -r '.tag_name // empty')
-            set -o pipefail
-            [  -z "$LATEST_VERSION" ] && LATEST_VERSION="0.0.0"
-            VERSION=$(bump2version minor --allow-dirty --current-version $LATEST_VERSION --list | grep new_version | cut -f2 -d=)
-            zip -r manage-mysql-user-$VERSION.zip *
-            echo "${VERSION}" > VERSION
+            ls -la artifacts
       - persist_to_workspace:
           root: artifacts
           paths:
-            - manage-mysql-user-*.zip
-            - VERSION
-  publish-github-release:
+            - *
+  package-publish-github-release:
       docker:
         - image: cibuilds/github:0.10
       steps:
         - attach_workspace:
             at: ./artifacts
         - run:
-            name: "Publish Release on GitHub"
+            name: "Package and publish release on GitHub"
             command: |
-              VERSION=$(cat ./artifacts/VERSION)
-              rm ./artifacts/VERSION
-              ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
+              pip install --quiet --user bump2version
+              cd ./artifacts
+              set +o pipefail
+              LATEST_VERSION=$(curl --silent "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/releases/latest" | jq -r '.tag_name // empty')
+              set -o pipefail
+              [  -z "$LATEST_VERSION" ] && LATEST_VERSION="0.0.0"
+              VERSION=$(bump2version minor --allow-dirty --current-version $LATEST_VERSION --list | grep new_version | cut -f2 -d=)
+              zip -r manage-mysql-user-$VERSION.zip *
+              ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} manage-mysql-user-$VERSION.zip
 workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build
-      - publish-github-release:
+      - build-test
+      - package-publish-github-release:
+          parallelism: 1
           requires:
-            - build
+            - build-test
           filters:
             branches:
               only: master
