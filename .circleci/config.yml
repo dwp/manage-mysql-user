@@ -24,10 +24,12 @@ jobs:
             [  -z "$LATEST_VERSION" ] && LATEST_VERSION="0.0.0"
             VERSION=$(bump2version minor --allow-dirty --current-version $LATEST_VERSION --list | grep new_version | cut -f2 -d=)
             zip -r manage-mysql-user-$VERSION.zip *
+            echo "${VERSION}" > artifacts/VERSION
       - persist_to_workspace:
           root: artifacts
           paths:
             - manage-mysql-user-*.zip
+            - VERSION
   publish-github-release:
       docker:
         - image: cibuilds/github:0.10
@@ -37,13 +39,8 @@ jobs:
         - run:
             name: "Publish Release on GitHub"
             command: |
-              ls -la artifacts
-              set +o pipefail
-              LATEST_VERSION=$(curl --silent "https://api.github.com/repos/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/releases/latest" | jq -r '.tag_name // empty')
-              set -o pipefail
-              [  -z "$LATEST_VERSION" ] && LATEST_VERSION="0.0.0"
-              VERSION=$(bump2version minor --allow-dirty --current-version $LATEST_VERSION --list | grep new_version | cut -f2 -d=)
-              echo "ghr -t GITHUB_TOKEN -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/"
+              VERSION=$(cat ./artifacts/VERSION)
+              rm ./artifacts/VERSION
               ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 workflows:
   version: 2
