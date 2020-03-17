@@ -20,6 +20,7 @@ jobs:
       - persist_to_workspace:
           root: artifacts
   package-publish-github-release:
+    parallelism: 1
     docker:
       - image: cibuilds/github:0.10
     steps:
@@ -43,7 +44,6 @@ workflows:
     jobs:
       - build-test
       - package-publish-github-release:
-          parallelism: 1
           requires:
             - build-test
           filters:
