@@ -1,2 +1,2 @@
 # manage-mysql-user
-Manages MySQL users
+AWS Lambda function to manage MySQL users
