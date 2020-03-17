@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  build-test
+  build-test:
     docker:
       - image: circleci/python:3.7
     working_directory: ~/repo
