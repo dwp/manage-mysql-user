@@ -18,7 +18,9 @@ jobs:
             cp manage-mysql-user.py artifacts/
             ls -la artifacts
       - persist_to_workspace:
-          root: artifacts
+          root: ./
+          paths:
+            - artifacts
   package-publish-github-release:
     parallelism: 1
     docker:
