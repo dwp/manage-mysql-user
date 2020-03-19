@@ -21,7 +21,6 @@ jobs:
           root: ./
           paths:
             - artifacts
-
   package-publish-github-release:
     parallelism: 1
     docker:
