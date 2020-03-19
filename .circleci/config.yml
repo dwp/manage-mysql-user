@@ -21,6 +21,19 @@ jobs:
           root: ./
           paths:
             - artifacts
+  test-attach:
+    docker:
+      - image: cibuilds/github:0.10
+    steps:
+      - attach_workspace:
+          at: ./artifacts
+      - run:
+          name: "Check workspace persist/attach path"
+          command: |
+            ls -la .
+            ls -la ./artifacts
+            ls -la ./artifacts/artifacts
+
   package-publish-github-release:
     parallelism: 1
     docker:
@@ -44,6 +57,9 @@ workflows:
   build-and-deploy:
     jobs:
       - build-test
+      - test-attach:
+          requires:
+            - build-test
       - package-publish-github-release:
           requires:
             - build-test
