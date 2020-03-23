@@ -21,7 +21,7 @@ logger.info("Logging at {} level".format(log_level.upper()))
 
 def generate_password():
     valid_chars = string.ascii_letters + string.digits + string.punctuation
-    invalid_chars = ['/', '@', '"', '\\'] # Not allowed in a MySQL password
+    invalid_chars = ['/', '@', '"', '\\', '\''] # Not allowed in a MySQL password
     pw_chars = ''.join([i for i in valid_chars if i not in invalid_chars])
     pw = ''.join((random.choice(pw_chars)) for x in range(40))
     return pw
