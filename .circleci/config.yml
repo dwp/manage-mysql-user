@@ -16,6 +16,7 @@ jobs:
             mkdir -p artifacts
             sudo pip --quiet install -r requirements.txt -t artifacts
             cp manage-mysql-user.py artifacts/
+            cp rds-ca-2019-2015-root.pem artifacts/
             ls -la artifacts
       - persist_to_workspace:
           root: ./
