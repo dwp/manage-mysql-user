@@ -119,7 +119,7 @@ def handler(event, context):
     logger.info(f"Event: {event}")
 
     mysql_user_username = event['mysql_user_username']
-    mysql_user_password_parameter_name = event['mysql_user_password_parameter_name']
+    mysql_user_password_parameter_name = event[ 'mysql_user_password_parameter_name' ]
     database = os.environ['RDS_DATABASE_NAME']
 
     logger.info(f"Updating {mysql_user_username}")
