@@ -57,7 +57,7 @@ def get_connection(password):
         host=os.environ["RDS_ENDPOINT"],
         user=os.environ["RDS_MASTER_USERNAME"],
         password=password,
-        database=os.environ[   "RDS_DATABASE_NAME"],
+        database=os.environ["RDS_DATABASE_NAME"],
         ssl_ca="/var/task/rds-ca-2019-2015-root.pem",
         ssl_verify_cert=True,
     )
