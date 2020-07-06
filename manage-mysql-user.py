@@ -18,10 +18,7 @@ logger.info("Logging at {} level".format(log_level.upper()))
 
 # Use appropriate CA SSL cert to verify RDS identity. Use "AmazonRootCA1.pem" for Aurora Serverless.
 # Defaults to "rds-ca-2019-2015-root.pem" to suit normal RDS.
-if "RDS_CA_CERT" in os.environ:
-    rds_ca_cert = os.environ["RDS_CA_CERT"]
-else:
-    rds_ca_cert = "/var/task/rds-ca-2019-2015-root.pem"
+rds_ca_cert = os.environ["RDS_CA_CERT"] if "RDS_CA_CERT" in os.environ else "/var/task/rds-ca-2019-2015-root.pem"
 
 
 def generate_password():
