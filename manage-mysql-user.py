@@ -122,9 +122,62 @@ def test_connection(username, password_parameter):
         return True
 
 
+def validate_event(event):
+    is_valid = True
+
+    if "mysql_user_username" not in event.keys():
+        logger.error(f"Invalid event: 'mysql_user_username' must be set")
+        is_valid = False
+
+    if ("mysql_user_password_parameter_name" in event.keys()) is (
+        "mysql_user_password_secret_name" in event.keys()
+    ):
+        logger.error(
+            f"Invalid event: One and only one of 'mysql_user_password_parameter_name', 'mysql_user_password_secret_name' must be set"
+        )
+        is_valid = False
+
+    if not is_valid:
+        raise ValueError("Invalid event")
+
+
+def validate_envvars():
+    is_valid = True
+
+    if not "RDS_ENDPOINT" in os.environ:
+        logger.error(f"Invalid environment variable value: 'RDS_ENDPOINT' must be set")
+        is_valid = False
+
+    if not "RDS_DATABASE_NAME" in os.environ:
+        logger.error(
+            f"Invalid environment variable value: 'RDS_DATABASE_NAME' must be set"
+        )
+        is_valid = False
+
+    if not "RDS_MASTER_USERNAME" in os.environ:
+        logger.error(
+            f"Invalid environment variable value: 'RDS_MASTER_USERNAME' must be set"
+        )
+        is_valid = False
+
+    if ("RDS_MASTER_PASSWORD_SECRET_NAME" in os.environ) is (
+        "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
+    ):
+        logger.error(
+            f"Invalid event: One and only one of 'RDS_MASTER_PASSWORD_SECRET_NAME', 'RDS_MASTER_PASSWORD_PARAMETER_NAME' must be set"
+        )
+        is_valid = False
+
+    if not is_valid:
+        raise ValueError("Invalid environment variable value(s)")
+
+
 def handler(event, context):
 
     logger.info(f"Event: {event}")
+
+    validate_event(event)
+    validate_envvars()
 
     mysql_user_username = event["mysql_user_username"]
     mysql_user_password_parameter_name = event["mysql_user_password_parameter_name"]
