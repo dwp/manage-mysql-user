@@ -158,6 +158,7 @@ def validate_event(event):
         logger.error(f"Invalid event: 'mysql_user_username' must be set")
         is_valid = False
 
+    # Check that one of these keys is present but not both at the same time
     if ("mysql_user_password_parameter_name" in event.keys()) is (
         "mysql_user_password_secret_name" in event.keys()
     ):
@@ -189,6 +190,7 @@ def validate_envvars():
         )
         is_valid = False
 
+    # Check that one of these vars is present but not both at the same time
     if ("RDS_MASTER_PASSWORD_SECRET_NAME" in os.environ) is (
         "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
     ):
