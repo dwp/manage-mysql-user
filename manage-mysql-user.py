@@ -26,6 +26,14 @@ rds_ca_cert = (
 
 
 def generate_password():
+    """Generate a password.
+
+    Args:
+        None
+
+    Returns:
+        str: generated password
+    """
     valid_chars = string.ascii_letters + string.digits + string.punctuation
     invalid_chars = ["/", "@", '"', "\\", "'"]  # Not allowed in a MySQL password
     pw_chars = "".join([i for i in valid_chars if i not in invalid_chars])
@@ -35,6 +43,22 @@ def generate_password():
 
 
 def update_password_source(password, password_source, password_source_type):
+    """Update password stored in AWS SSM or Secrets Manager
+
+    Args:
+        password (str): password
+
+        password_source (str): name of entity storing the password
+                               e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+    Returns:
+        None
+    """
     if password_source_type is "ssm":
         ssm = boto3.client("ssm")
         try:
@@ -62,6 +86,20 @@ def update_password_source(password, password_source, password_source_type):
 
 
 def get_mysql_password(password_source, password_source_type):
+    """Return password stored in AWS SSM or Secrets Manager
+
+    Args:
+        password_source (str): name of entity storing the password
+                               e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+    Returns:
+        str: retrieved password
+    """
     if password_source_type is "ssm":
         ssm = boto3.client("ssm")
         return ssm.get_parameter(Name=password_source, WithDecryption=True)[
@@ -79,6 +117,16 @@ def get_mysql_password(password_source, password_source_type):
 
 
 def get_connection(username, password):
+    """Return MySQL connection
+
+    Args:
+        username (str): MySQL username
+
+        password (str): MySQL password
+
+    Returns:
+        obj: MySQL connection
+    """
     return mysql.connector.connect(
         host=os.environ["RDS_ENDPOINT"],
         user=username,
@@ -90,6 +138,25 @@ def get_connection(username, password):
 
 
 def execute_statement(sql, username, password_source, password_source_type):
+    """Execute MySQL statement that does not return data
+
+    Args:
+        sql (str): MySQL statement
+
+        username (str): MySQL username
+
+        password_source (str): name of entity storing the password for the
+                               username, e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+
+    Returns:
+        None
+    """
     connection = get_connection(
         username, get_mysql_password(password_source, password_source_type)
     )
@@ -101,6 +168,25 @@ def execute_statement(sql, username, password_source, password_source_type):
 
 
 def execute_query(sql, username, password_source, password_source_type):
+    """Execute MySQL statement that returns data
+
+    Args:
+        sql (str): MySQL statement
+
+        username (str): MySQL username used to login into server
+
+        password_source (str): name of entity storing the password for the
+                               username, e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+
+    Returns:
+         MySQL rows as a list of tuples.
+    """
     connection = get_connection(
         username, get_mysql_password(password_source, password_source_type)
     )
@@ -114,6 +200,26 @@ def execute_query(sql, username, password_source, password_source_type):
 
 
 def check_user_exists(master_username, username, password_source, password_source_type):
+    """Check if a user <username> exists in MySQL server
+
+    Args:
+        master_username (str): MySQL master username. This is used to login.
+
+        username (str): MySQL username existence of which is to be checked.
+
+        password_source (str): name of entity storing the password for the
+                               master username, e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+
+    Returns:
+         Boolean: True if user exists, False otherwise
+    """
+
     result = execute_query(
         "SELECT user FROM mysql.user WHERE user = '{}';".format(username),
         master_username,
@@ -134,6 +240,23 @@ def check_user_exists(master_username, username, password_source, password_sourc
 
 
 def test_connection(username, password_source, password_source_type):
+    """Check if a user <username> can login into MySQL server
+
+    Args:
+        username (str): MySQL username
+
+        password_source (str): name of entity storing the password for the
+                               username, e.g. SSM parameter name or
+                               Secrets Manager secret name
+
+        password_source_type (str): type of entity storing the password.
+                                    Accepts one of two values:
+                                        "secretsmanager"
+                                        "ssm"
+
+    Returns:
+         Boolean: True if login successful, False otherwise
+    """
     mysql_user_password = get_mysql_password(password_source, password_source_type)
     try:
         connection = mysql.connector.connect(
@@ -152,6 +275,17 @@ def test_connection(username, password_source, password_source_type):
 
 
 def validate_event(event):
+    """Validate event JSON received as input
+
+    Args:
+        event (dict): JSON received as input
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: Invalid event
+    """
     is_valid = True
 
     if "mysql_user_username" not in event.keys():
@@ -172,6 +306,17 @@ def validate_event(event):
 
 
 def validate_envvars():
+    """Validate configuration supplied in environment variables
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: Invalid environment variable value(s)
+    """
     is_valid = True
 
     if not "RDS_ENDPOINT" in os.environ:
@@ -195,7 +340,7 @@ def validate_envvars():
         "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
     ):
         logger.error(
-            f"Invalid event: One and only one of 'RDS_MASTER_PASSWORD_SECRET_NAME', 'RDS_MASTER_PASSWORD_PARAMETER_NAME' must be set"
+            f"Invalid environment variable values: One and only one of 'RDS_MASTER_PASSWORD_SECRET_NAME', 'RDS_MASTER_PASSWORD_PARAMETER_NAME' must be set"
         )
         is_valid = False
 
