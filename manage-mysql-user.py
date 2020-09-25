@@ -83,7 +83,7 @@ def update_password_source(username, password, password_source, password_source_
                 "host": os.environ["RDS_ENDPOINT"],
                 "port": 3306,
                 "username": username,
-                "password": password
+                "password": password,
             }
             secretsmanager.put_secret_value(
                 SecretId=password_source, SecretString=json.dumps(secret_value)
@@ -386,7 +386,10 @@ def handler(event, context):
     logger.info(f"Updating {mysql_user_username}")
     pw = generate_password()
     update_password_source(
-        mysql_user_username, pw, mysql_user_password_source, mysql_user_password_source_type
+        mysql_user_username,
+        pw,
+        mysql_user_password_source,
+        mysql_user_password_source_type,
     )
     user_exists = check_user_exists(
         mysql_master_username,
