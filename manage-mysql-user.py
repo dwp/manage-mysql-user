@@ -42,10 +42,12 @@ def generate_password():
     return pw
 
 
-def update_password_source(password, password_source, password_source_type):
+def update_password_source(username, password, password_source, password_source_type):
     """Update password stored in AWS SSM or Secrets Manager
 
     Args:
+        username (str): username
+
         password (str): password
 
         password_source (str): name of entity storing the password
@@ -74,7 +76,15 @@ def update_password_source(password, password_source, password_source_type):
     elif password_source_type is "secretsmanager":
         secretsmanager = boto3.client("secretsmanager")
         try:
-            secret_value = {"password": password}
+            # Engine and port are hard-coded as these parameters can only be used with Aurora Serverless
+            secret_value = {
+                "dbInstanceIdentifier": os.environ["RDS_DATABASE_NAME"],
+                "engine": "aurora-mysql",
+                "host": os.environ["RDS_ENDPOINT"],
+                "port": 3306,
+                "username": username,
+                "password": password
+            }
             secretsmanager.put_secret_value(
                 SecretId=password_source, SecretString=json.dumps(secret_value)
             )
@@ -376,7 +386,7 @@ def handler(event, context):
     logger.info(f"Updating {mysql_user_username}")
     pw = generate_password()
     update_password_source(
-        pw, mysql_user_password_source, mysql_user_password_source_type
+        mysql_user_username, pw, mysql_user_password_source, mysql_user_password_source_type
     )
     user_exists = check_user_exists(
         mysql_master_username,
