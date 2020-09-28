@@ -92,11 +92,8 @@ def update_password_source(username, password, password_source, password_source_
             secretsmanager.tag_resource(
                 SecretId=password_source,
                 Tags=[
-                    {
-                        'Key': 'LastRotated',
-                        'Value': str(datetime.now())
-                    },
-                ]
+                    {"Key": "LastRotated", "Value": str(datetime.now())},
+                ],
             )
             logger.debug(f"Password updated in {password_source_type}")
         except Exception as e:
