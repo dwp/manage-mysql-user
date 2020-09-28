@@ -7,6 +7,7 @@ import boto3
 import random
 import string
 import json
+from datetime import datetime
 
 libraries = ("boto3", "mysql")
 
@@ -87,6 +88,15 @@ def update_password_source(username, password, password_source, password_source_
             }
             secretsmanager.put_secret_value(
                 SecretId=password_source, SecretString=json.dumps(secret_value)
+            )
+            secretsmanager.tag_resource(
+                SecretId=password_source,
+                Tags=[
+                    {
+                        'Key': 'LastRotated',
+                        'Value': str(datetime.now())
+                    },
+                ]
             )
             logger.debug(f"Password updated in {password_source_type}")
         except Exception as e:
