@@ -318,6 +318,11 @@ def validate_event(event):
         )
         is_valid = False
 
+    if "privileges" in event.keys():
+        if event["privileges"] not in ["ALL", "SELECT", ""]:
+            logger.error(f"Invalid event: 'privileges' must be ALL, SELECT or empty")
+            is_valid = False
+
     if not is_valid:
         raise ValueError("Invalid event")
 
@@ -408,6 +413,10 @@ def handler(event, context):
         logger.info(
             f"User {mysql_user_username} already exists in MySQL, will update password"
         )
+    else:
+        logger.info(
+            f"User {mysql_user_username} doesn't exist in MySQL and will be created"
+        )
 
     # In Aurora CREATE USER IF NOT EXISTS does not update password for existing user, hence SET PASSWORD is required
     execute_statement(
@@ -424,12 +433,19 @@ def handler(event, context):
         mysql_master_password_source,
         mysql_master_password_source_type,
     )
-    execute_statement(
-        "GRANT ALL ON `{}`.* to '{}'@'%';".format(database, mysql_user_username),
-        mysql_master_username,
-        mysql_master_password_source,
-        mysql_master_password_source_type,
-    )
+
+    if "privileges" in event.keys():
+        if len(event["privileges"]) > 0:
+            privileges = event["privileges"]
+            logger.info(
+                f"Granting {privileges} privileges to MySQL user {mysql_user_username}"
+            )
+            execute_statement(
+                "GRANT {} ON `{}`.* to '{}'@'%';".format(privileges, database, mysql_user_username),
+                mysql_master_username,
+                mysql_master_password_source,
+                mysql_master_password_source_type,
+            )
 
     test_result = test_connection(
         mysql_user_username, mysql_user_password_source, mysql_user_password_source_type
