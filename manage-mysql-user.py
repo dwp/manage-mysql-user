@@ -448,6 +448,10 @@ def handler(event, context):
                 mysql_master_password_source,
                 mysql_master_password_source_type,
             )
+    else:
+        logger.info(
+            f"Privileges not changed for MySQL user {mysql_user_username} as 'privileges' key not set in payload"
+        )
 
     test_result = test_connection(
         mysql_user_username, mysql_user_password_source, mysql_user_password_source_type
