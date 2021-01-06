@@ -441,7 +441,9 @@ def handler(event, context):
                 f"Granting {privileges} privileges to MySQL user {mysql_user_username}"
             )
             execute_statement(
-                "GRANT {} ON `{}`.* to '{}'@'%';".format(privileges, database, mysql_user_username),
+                "GRANT {} ON `{}`.* to '{}'@'%';".format(
+                    privileges, database, mysql_user_username
+                ),
                 mysql_master_username,
                 mysql_master_password_source,
                 mysql_master_password_source_type,
