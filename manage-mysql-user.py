@@ -98,6 +98,7 @@ def update_password_source(username, password, password_source, password_source_
             logger.debug(f"Password updated in {password_source_type}")
         except Exception as e:
             logger.error(e)
+            raise e
     else:
         raise Exception(f"Unknown password source type: {password_source_type}")
 
@@ -319,9 +320,10 @@ def validate_event(event):
         is_valid = False
 
     if "privileges" in event.keys():
-        if event["privileges"] not in ["ALL", "SELECT", ""]:
-            logger.error(f"Invalid event: 'privileges' must be ALL, SELECT or empty")
-            is_valid = False
+        for privilege in event["privileges"].split(", "):
+            if privilege not in ["ALL", "ALTER", "ALTER ROUTINE", "CREATE", "CREATE ROUTINE", "CREATE TABLESPACE", "CREATE TEMPORARY TABLE", "CREATE USER", "CREATE VIEW", "DELETE", "DROP", "EVENT", "EXECUTE", "FILE", "GRANT OPTION", "INDEX", "INSERT", "LOCK TABLES", "PROCESS", "PROXY", "REFERENCE", "RELOAD", "REPLICATION CLIENT", "REPLICATION SLAVEE", "SELECT", "SHOW DATABASE", "SHOW VIEW", "SHUTDOWN", "SUPER", "TRIGGER", "UPDATE", "USAGE"]:
+                logger.error(f"Invalid event: 'privileges' must be a comma-separated list of valid MySQL privileges")
+                is_valid = False
 
     if not is_valid:
         raise ValueError("Invalid event")
@@ -439,6 +441,12 @@ def handler(event, context):
             privileges = event["privileges"]
             logger.info(
                 f"Granting {privileges} privileges to MySQL user {mysql_user_username}"
+            )
+            execute_statement(
+                "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{}'@'%';".format(mysql_user_username),
+                mysql_master_username,
+                mysql_master_password_source,
+                mysql_master_password_source_type,
             )
             execute_statement(
                 "GRANT {} ON `{}`.* to '{}'@'%';".format(
