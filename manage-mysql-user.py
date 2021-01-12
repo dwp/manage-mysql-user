@@ -321,8 +321,43 @@ def validate_event(event):
 
     if "privileges" in event.keys():
         for privilege in event["privileges"].split(", "):
-            if privilege not in ["ALL", "ALTER", "ALTER ROUTINE", "CREATE", "CREATE ROUTINE", "CREATE TABLESPACE", "CREATE TEMPORARY TABLE", "CREATE USER", "CREATE VIEW", "DELETE", "DROP", "EVENT", "EXECUTE", "FILE", "GRANT OPTION", "INDEX", "INSERT", "LOCK TABLES", "PROCESS", "PROXY", "REFERENCE", "RELOAD", "REPLICATION CLIENT", "REPLICATION SLAVEE", "SELECT", "SHOW DATABASE", "SHOW VIEW", "SHUTDOWN", "SUPER", "TRIGGER", "UPDATE", "USAGE"]:
-                logger.error(f"Invalid event: 'privileges' must be a comma-separated list of valid MySQL privileges")
+            if privilege not in [
+                "ALL",
+                "ALTER",
+                "ALTER ROUTINE",
+                "CREATE",
+                "CREATE ROUTINE",
+                "CREATE TABLESPACE",
+                "CREATE TEMPORARY TABLE",
+                "CREATE USER",
+                "CREATE VIEW",
+                "DELETE",
+                "DROP",
+                "EVENT",
+                "EXECUTE",
+                "FILE",
+                "GRANT OPTION",
+                "INDEX",
+                "INSERT",
+                "LOCK TABLES",
+                "PROCESS",
+                "PROXY",
+                "REFERENCE",
+                "RELOAD",
+                "REPLICATION CLIENT",
+                "REPLICATION SLAVEE",
+                "SELECT",
+                "SHOW DATABASE",
+                "SHOW VIEW",
+                "SHUTDOWN",
+                "SUPER",
+                "TRIGGER",
+                "UPDATE",
+                "USAGE",
+            ]:
+                logger.error(
+                    f"Invalid event: 'privileges' must be a comma-separated list of valid MySQL privileges"
+                )
                 is_valid = False
 
     if not is_valid:
@@ -443,7 +478,9 @@ def handler(event, context):
                 f"Granting {privileges} privileges to MySQL user {mysql_user_username}"
             )
             execute_statement(
-                "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{}'@'%';".format(mysql_user_username),
+                "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{}'@'%';".format(
+                    mysql_user_username
+                ),
                 mysql_master_username,
                 mysql_master_password_source,
                 mysql_master_password_source_type,
