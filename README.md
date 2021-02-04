@@ -27,7 +27,7 @@ Grants `SELECT, CREATE, DROP` on all tables:
 }
 ```
 
-Grants `SELECT` on all tables, `CREATE` on `table1` and `ALL` on `table2`: 
+Grants `SELECT` on all tables, `UPDATE` on `table1` and `ALL` on `table2`: 
 ```
 {
   "mysql_user_username": "foo",
