@@ -304,6 +304,48 @@ def validate_event(event):
     Raises:
         ValueError: Invalid event
     """
+    valid_privileges = [
+        "ALL",
+        "ALTER",
+        "ALTER ROUTINE",
+        "CREATE",
+        "CREATE ROUTINE",
+        "CREATE TABLESPACE",
+        "CREATE TEMPORARY TABLE",
+        "CREATE USER",
+        "CREATE VIEW",
+        "DELETE",
+        "DROP",
+        "EVENT",
+        "EXECUTE",
+        "FILE",
+        "GRANT OPTION",
+        "INDEX",
+        "INSERT",
+        "LOCK TABLES",
+        "PROCESS",
+        "PROXY",
+        "REFERENCE",
+        "RELOAD",
+        "REPLICATION CLIENT",
+        "REPLICATION SLAVEE",
+        "SELECT",
+        "SHOW DATABASE",
+        "SHOW VIEW",
+        "SHUTDOWN",
+        "SUPER",
+        "TRIGGER",
+        "UPDATE",
+        "USAGE",
+    ]
+    valid_chars_in_table_name = string.ascii_letters + string.digits + '$' + '_'
+    privilege_err_msg = """
+    f"Invalid event: 'privileges' must contain a comma-separated list of valid MySQL privileges 
+    with optional table names after a colon, e.g.
+    "SELECT, UPDATE:table1, ALL:table2"
+    Table name may only contain basic Latin letters, digits 0-9, dollar, underscore
+    """
+
     is_valid = True
 
     if "mysql_user_username" not in event.keys():
@@ -312,7 +354,7 @@ def validate_event(event):
 
     # Check that one of these keys is present but not both at the same time
     if ("mysql_user_password_parameter_name" in event.keys()) is (
-        "mysql_user_password_secret_name" in event.keys()
+            "mysql_user_password_secret_name" in event.keys()
     ):
         logger.error(
             f"Invalid event: One and only one of 'mysql_user_password_parameter_name', 'mysql_user_password_secret_name' must be set"
@@ -320,45 +362,22 @@ def validate_event(event):
         is_valid = False
 
     if "privileges" in event.keys():
-        for privilege in event["privileges"].split(", "):
-            if privilege not in [
-                "ALL",
-                "ALTER",
-                "ALTER ROUTINE",
-                "CREATE",
-                "CREATE ROUTINE",
-                "CREATE TABLESPACE",
-                "CREATE TEMPORARY TABLE",
-                "CREATE USER",
-                "CREATE VIEW",
-                "DELETE",
-                "DROP",
-                "EVENT",
-                "EXECUTE",
-                "FILE",
-                "GRANT OPTION",
-                "INDEX",
-                "INSERT",
-                "LOCK TABLES",
-                "PROCESS",
-                "PROXY",
-                "REFERENCE",
-                "RELOAD",
-                "REPLICATION CLIENT",
-                "REPLICATION SLAVEE",
-                "SELECT",
-                "SHOW DATABASE",
-                "SHOW VIEW",
-                "SHUTDOWN",
-                "SUPER",
-                "TRIGGER",
-                "UPDATE",
-                "USAGE",
-            ]:
-                logger.error(
-                    f"Invalid event: 'privileges' must be a comma-separated list of valid MySQL privileges"
-                )
+        for privilege_table in event["privileges"].split(", "):
+            privilege = privilege_table.split(":")[0]
+            if privilege not in valid_privileges:
+                logger.error(privilege_err_msg)
                 is_valid = False
+
+            if len(privilege_table.split(":")) not in [1, 2]:
+                logger.error(privilege_err_msg)
+                is_valid = False
+
+            if len(privilege_table.split(":")) is 2:
+                table = privilege_table.split(":")[1]
+                for i in table:
+                    if i not in valid_chars_in_table_name:
+                        logger.error(privilege_err_msg)
+                        is_valid = False
 
     if not is_valid:
         raise ValueError("Invalid event")
@@ -396,7 +415,7 @@ def validate_envvars():
 
     # Check that one of these vars is present but not both at the same time
     if ("RDS_MASTER_PASSWORD_SECRET_NAME" in os.environ) is (
-        "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
+            "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
     ):
         logger.error(
             f"Invalid environment variable values: One and only one of 'RDS_MASTER_PASSWORD_SECRET_NAME', 'RDS_MASTER_PASSWORD_PARAMETER_NAME' must be set"
@@ -475,7 +494,7 @@ def handler(event, context):
         if len(event["privileges"]) > 0:
             privileges = event["privileges"]
             logger.info(
-                f"Granting {privileges} privileges to MySQL user {mysql_user_username}"
+                f"Revoking existing privileges and granting {privileges} to MySQL user {mysql_user_username}"
             )
             execute_statement(
                 "REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{}'@'%';".format(
@@ -485,14 +504,17 @@ def handler(event, context):
                 mysql_master_password_source,
                 mysql_master_password_source_type,
             )
-            execute_statement(
-                "GRANT {} ON `{}`.* to '{}'@'%';".format(
-                    privileges, database, mysql_user_username
-                ),
-                mysql_master_username,
-                mysql_master_password_source,
-                mysql_master_password_source_type,
-            )
+            for privilege_table in event["privileges"].split(", "):
+                privilege = privilege_table.split(":")[0]
+                table = privilege_table.split(":")[1] if len(privilege_table.split(":")) is 2 else "*"
+                execute_statement(
+                    "GRANT {} ON `{}`.{} to '{}'@'%';".format(
+                        privilege, database, table, mysql_user_username
+                    ),
+                    mysql_master_username,
+                    mysql_master_password_source,
+                    mysql_master_password_source_type,
+                )
     else:
         logger.info(
             f"Privileges not changed for MySQL user {mysql_user_username} as 'privileges' key not set in payload"
