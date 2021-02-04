@@ -35,3 +35,12 @@ Grants `SELECT` on all tables, `UPDATE` on `table1` and `ALL` on `table2`:
   "privileges": "SELECT, UPDATE:table1, ALL:table2"
 }
 ```
+
+Grants `SELECT` on all tables, `UPDATE` and `INSERT` on `table1` and `ALL` on `table2`: 
+```
+{
+  "mysql_user_username": "foo",
+  "mysql_user_password_secret_name": "bar",
+  "privileges": "SELECT, UPDATE:table1, INSERT:table1, ALL:table2"
+}
+```
