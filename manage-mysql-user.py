@@ -338,7 +338,7 @@ def validate_event(event):
         "UPDATE",
         "USAGE",
     ]
-    valid_chars_in_table_name = string.ascii_letters + string.digits + '$' + '_'
+    valid_chars_in_table_name = string.ascii_letters + string.digits + "$" + "_"
     privilege_err_msg = """
     Invalid event: 'privileges' must contain a comma-separated list of valid MySQL privileges 
     with optional table names after a colon, e.g.
@@ -354,7 +354,7 @@ def validate_event(event):
 
     # Check that one of these keys is present but not both at the same time
     if ("mysql_user_password_parameter_name" in event.keys()) is (
-            "mysql_user_password_secret_name" in event.keys()
+        "mysql_user_password_secret_name" in event.keys()
     ):
         logger.error(
             f"Invalid event: One and only one of 'mysql_user_password_parameter_name', 'mysql_user_password_secret_name' must be set"
@@ -415,7 +415,7 @@ def validate_envvars():
 
     # Check that one of these vars is present but not both at the same time
     if ("RDS_MASTER_PASSWORD_SECRET_NAME" in os.environ) is (
-            "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
+        "RDS_MASTER_PASSWORD_PARAMETER_NAME" in os.environ
     ):
         logger.error(
             f"Invalid environment variable values: One and only one of 'RDS_MASTER_PASSWORD_SECRET_NAME', 'RDS_MASTER_PASSWORD_PARAMETER_NAME' must be set"
@@ -506,7 +506,11 @@ def handler(event, context):
             )
             for privilege_table in event["privileges"].split(", "):
                 privilege = privilege_table.split(":")[0]
-                table = privilege_table.split(":")[1] if len(privilege_table.split(":")) is 2 else "*"
+                table = (
+                    privilege_table.split(":")[1]
+                    if len(privilege_table.split(":")) is 2
+                    else "*"
+                )
                 execute_statement(
                     "GRANT {} ON `{}`.{} to '{}'@'%';".format(
                         privilege, database, table, mysql_user_username
