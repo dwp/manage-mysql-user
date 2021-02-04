@@ -340,7 +340,7 @@ def validate_event(event):
     ]
     valid_chars_in_table_name = string.ascii_letters + string.digits + '$' + '_'
     privilege_err_msg = """
-    f"Invalid event: 'privileges' must contain a comma-separated list of valid MySQL privileges 
+    Invalid event: 'privileges' must contain a comma-separated list of valid MySQL privileges 
     with optional table names after a colon, e.g.
     "SELECT, UPDATE:table1, ALL:table2"
     Table name may only contain basic Latin letters, digits 0-9, dollar, underscore
