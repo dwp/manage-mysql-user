@@ -397,17 +397,17 @@ def validate_envvars():
     """
     is_valid = True
 
-    if not "RDS_ENDPOINT" in os.environ:
+    if "RDS_ENDPOINT" not in os.environ:
         logger.error(f"Invalid environment variable value: 'RDS_ENDPOINT' must be set")
         is_valid = False
 
-    if not "RDS_DATABASE_NAME" in os.environ:
+    if "RDS_DATABASE_NAME" not in os.environ:
         logger.error(
             f"Invalid environment variable value: 'RDS_DATABASE_NAME' must be set"
         )
         is_valid = False
 
-    if not "RDS_MASTER_USERNAME" in os.environ:
+    if "RDS_MASTER_USERNAME" not in os.environ:
         logger.error(
             f"Invalid environment variable value: 'RDS_MASTER_USERNAME' must be set"
         )
@@ -426,7 +426,7 @@ def validate_envvars():
         raise ValueError("Invalid environment variable value(s)")
 
 
-def handler(event, context):
+def handler(event, _):
 
     logger.info(f"Event: {event}")
 
