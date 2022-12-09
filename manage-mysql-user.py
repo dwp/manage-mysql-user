@@ -35,7 +35,7 @@ def generate_password():
     Returns:
         str: generated password
     """
-    valid_chars = string.ascii_letters + string.digits + string.punctuation
+    valid_chars = string.ascii_letters + string.digits
     invalid_chars = ["/", "@", '"', "\\", "'"]  # Not allowed in a MySQL password
     pw_chars = "".join([i for i in valid_chars if i not in invalid_chars])
     pw = "".join((random.choice(pw_chars)) for x in range(40))
