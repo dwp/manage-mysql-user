@@ -24,11 +24,11 @@ jobs:
           cp *.pem artifacts/
           ls -la artifacts
           cd ./artifacts
-          zip -r manage-mysql-user-$VERSION.zip *
+          zip -r manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip *
 
       - uses: actions/upload-artifact@v3
         with:
-          name: manage-mysql-user-$VERSION.zip
+          name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
           path: ./
 
   get-publish-version:
