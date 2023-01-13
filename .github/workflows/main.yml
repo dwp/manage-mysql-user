@@ -78,6 +78,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          path: ./
       
       - name: Create Release
         id: create_release
@@ -96,6 +97,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          asset_path: ./manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
           asset_name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
           asset_content_type: application/gzip
