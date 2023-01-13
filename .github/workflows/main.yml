@@ -56,7 +56,12 @@ jobs:
           else
             echo "semver_increment='p'" >> $GITHUB_OUTPUT
           fi
-      
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: manage-mysql-user-$VERSION.zip
+          path: ./
+
       - name: Increment SemVer
         id: semver
         uses: matt-FFFFFF/simple-semver@v0.1.0
@@ -76,6 +81,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Download manage-mysql-user.zip
+        uses: actions/download-artifact@v3
+        with:
+          name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
       
       - name: Create Release
         id: create_release
@@ -87,3 +97,13 @@ jobs:
           release_name: ${{ needs.get-publish-version.outputs.publish-version }}
           draft: false
           prerelease: false
+
+      - name: upload manage-mysql-user.zip file
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          asset_name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          asset_content_type: application/gzip
