@@ -23,12 +23,10 @@ jobs:
           cp manage-mysql-user.py artifacts/
           cp *.pem artifacts/
           ls -la artifacts
-          cd ./artifacts
-          zip -r manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip *
 
       - uses: actions/upload-artifact@v3
         with:
-          name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          name: artifacts
           path: ./
 
   get-publish-version:
@@ -74,11 +72,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download manage-mysql-user.zip
+      - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          name: artifacts
           path: ./
+      
+      - name: Zip artifacts
+        id: zip-artifacts
+        run: |
+          cd ./artifacts
+          zip -r manage-mysql-user.zip *
       
       - name: Create Release
         id: create_release
@@ -97,6 +101,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
+          asset_path: ./artifacts/manage-mysql-user.zip
           asset_name: manage-mysql-user-${{ needs.get-publish-version.outputs.publish-version }}.zip
           asset_content_type: application/gzip
