@@ -23,31 +23,28 @@ jobs:
           cp manage-mysql-user.py artifacts/
           cp *.pem artifacts/
           ls -la artifacts
+          cd ./artifacts
+          zip -r manage-mysql-user-$VERSION.zip *
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
-          name: artifacts
-          path: ./artifacts
+          name: manage-mysql-user-$VERSION.zip
+          path: ./
 
   get-publish-version:
     runs-on: ubuntu-latest
     outputs:
       publish-version: ${{ steps.get-publish-version.outputs.publish-version }}
-    steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: artifacts
+    steps:   
       - name: Prepare SemVer
         id: prepare-semver
         run: |
-          cd ./artifacts
           set +o pipefail
           LATEST_VERSION=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           set -o pipefail
           [  -z "$LATEST_VERSION" ] && LATEST_VERSION="0.0.0"
           echo "latest_version_out=$LATEST_VERSION" >> $GITHUB_OUTPUT
           VERSION=$(echo $LATEST_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
-          zip -r manage-mysql-user-$VERSION.zip *
           commit_message=$( echo "${{ github.event.head_commit.message }}" | sed 's/"//g')
           if [[ "${commit_message,,}" == *"major release"* ]]; then
             echo "semver_increment='m'" >> $GITHUB_OUTPUT
@@ -56,11 +53,6 @@ jobs:
           else
             echo "semver_increment='p'" >> $GITHUB_OUTPUT
           fi
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: manage-mysql-user-$VERSION.zip
-          path: ./
 
       - name: Increment SemVer
         id: semver
